@@ -24,7 +24,9 @@ include(avr-gcc.toolchain.cmake)
 set(PRODUCT_NAME hc_sr04)
 
 project("hc-sr04 ultrasonic sensor interface")
-file(GLOB SRC_FILES "src/*.c") # Load all files in src folder
+file(GLOB SRC_FILES 
+    "src/*.c"
+    "src/uart/*.c") # Load all files in src folder
 
 # Create one target
 add_executable(${PRODUCT_NAME} ${SRC_FILES})
