@@ -4,6 +4,7 @@
 # For a somehow more portable version of an AVR CMake Toolchain
 # see https://nnarain.github.io/2016/03/29/AVR-CMake-Toolchain.html
 cmake_minimum_required(VERSION 3.13)
+set (CMAKE_CXX_STANDARD 11)
 
 ## AVR Chip Configuration
 # 16Mhz clock
