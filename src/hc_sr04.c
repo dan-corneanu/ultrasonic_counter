@@ -48,7 +48,50 @@ volatile enum hc_sr04_states {
 
 volatile uint8_t hc_sr04_signals = 0x00;
 
+uint8_t hc_sr04_error = 1;
 unsigned long distance_mm = 0;
+
+// ------ BUZZER --------
+
+//  Buzzer pin 1 and 2
+#define INIT_BUZZER_PIN_1 (DDRB |= (1 << DDB3))
+#define INIT_BUZZER_PIN_2 (DDRB |= (1 << DDB4))
+#define TOGGLE_BUZZER_PINS (PORTB ^= ((1 << PORTB3) | (1 << PORTB4)))
+
+static uint8_t buzzer_started = 0;
+
+void buzzer_start(void)
+{
+    buzzer_started = 1;
+    PORTB |= (1 << PORTB3);
+    PORTB &= ~(1 << PORTB4);
+}
+
+void buzzer_stop(void)
+{
+    buzzer_started = 0;
+    // Set both pins to 0.
+    // The pizo transducer does not like DC current.
+    PORTB &= ~((1 << PORTB3) | (1 << PORTB4));
+}
+
+int buzzer_init(void)
+{
+    INIT_BUZZER_PIN_1;
+    INIT_BUZZER_PIN_2;
+
+    buzzer_stop();
+
+    return 0;
+}
+
+void buzzer_tick(void)
+{
+    if (buzzer_started)
+    {
+        TOGGLE_BUZZER_PINS;
+    }
+}
 
 void toggle_led_pin(void)
 {
@@ -174,7 +217,8 @@ int init(void)
 
     setup_main_timer();
     setup_hc_sr04_timer();
-
+    buzzer_init();
+    
     sei();
 
     return 0;
@@ -199,9 +243,13 @@ int main(void)
             else if (main_signals & (1 << MAIN_SIGNAL_HC_SR04_NEW_SAMPLE))
             {
                 main_signals &= ~(1 << MAIN_SIGNAL_HC_SR04_NEW_SAMPLE);
+                hc_sr04_error = 0;
                 printf("%lu mm\n\r", distance_mm);
-            } else if(main_signals & (1 << MAIN_SIGNAL_HC_SR04_ERROR)) {
+            }
+            else if (main_signals & (1 << MAIN_SIGNAL_HC_SR04_ERROR))
+            {
                 main_signals &= ~(1 << MAIN_SIGNAL_HC_SR04_ERROR);
+                hc_sr04_error = 1;
                 printf("No object detected.\n\r");
             }
             break;
@@ -258,6 +306,16 @@ ISR(TIMER0_COMPA_vect)
 {
     static uint8_t cnt = 0;
     cnt++;
+    if (!hc_sr04_error && distance_mm < 200 && !buzzer_started)
+    {
+        buzzer_start();
+    }
+    else if (!hc_sr04_error && distance_mm >= 200 && buzzer_started)
+    {
+        buzzer_stop();
+    }
+    buzzer_tick();
+
     if (cnt == 25)
     { // 100ms mark
         cnt = 0;
