@@ -27,10 +27,15 @@ set(PRODUCT_NAME hc_sr04)
 project("hc-sr04 ultrasonic sensor interface")
 file(GLOB SRC_FILES 
     "src/*.c"
-    "src/uart/*.c") # Load all files in src folder
+    "src/uart/*.c"
+    "src/hardware/*.c") # Load all files in src folder
 
 # Create one target
 add_executable(${PRODUCT_NAME} ${SRC_FILES})
+
+target_include_directories(${PRODUCT_NAME} PUBLIC
+    "headers"
+)
 
 # Rename the output to .elf as we will create multiple files
 set_target_properties(${PRODUCT_NAME} PROPERTIES OUTPUT_NAME ${PRODUCT_NAME}.elf)
